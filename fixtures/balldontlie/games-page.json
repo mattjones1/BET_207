@@ -1,0 +1,11 @@
+{"data":[
+  {"id":1,"date":"2025-10-21","datetime":"2025-10-21T23:30:00.000Z","season":2025,"status":"Final","status_state":"final","period":4,"time":"Final","postseason":false,"postponed":false,"home_team_score":119,"visitor_team_score":105,
+   "home_team":{"id":2,"conference":"East","division":"Atlantic","city":"Boston","name":"Celtics","full_name":"Boston Celtics","abbreviation":"BOS"},
+   "visitor_team":{"id":20,"conference":"East","division":"Atlantic","city":"New York","name":"Knicks","full_name":"New York Knicks","abbreviation":"NYK"}},
+  {"id":2,"date":"2025-10-22","datetime":"2025-10-22T23:00:00.000Z","season":2025,"status":"7:00 pm ET","status_state":"scheduled","period":0,"time":"","postseason":false,"postponed":false,"home_team_score":0,"visitor_team_score":0,
+   "home_team":{"id":20,"conference":"East","division":"Atlantic","city":"New York","name":"Knicks","full_name":"New York Knicks","abbreviation":"NYK"},
+   "visitor_team":{"id":16,"conference":"East","division":"Southeast","city":"Miami","name":"Heat","full_name":"Miami Heat","abbreviation":"MIA"}},
+  {"id":3,"date":"2025-10-23","datetime":null,"season":2025,"status":"Postponed","status_state":"postponed","period":0,"time":"","postseason":false,"postponed":true,"home_team_score":0,"visitor_team_score":0,
+   "home_team":{"id":16,"conference":"East","division":"Southeast","city":"Miami","name":"Heat","full_name":"Miami Heat","abbreviation":"MIA"},
+   "visitor_team":{"id":2,"conference":"East","division":"Atlantic","city":"Boston","name":"Celtics","full_name":"Boston Celtics","abbreviation":"BOS"}}
+],"meta":{"next_cursor":null,"per_page":100}}

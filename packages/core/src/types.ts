@@ -73,8 +73,8 @@ export interface HistoricalLine {
   gameId: string;
   provider: Provider;
   /** "closing" lines are retrospective benchmarks, not prices available at prediction time. */
-  lineType: "closing" | "consensus" | "provider";
-  sportsbook: string | null;
+  lineType: "closing" | "consensus" | "provider" | "opening";
+  sportsbook: string;   // "" = provider consensus or unnamed
   marketHomeMargin: number | null;
   homeSpreadPrice: number | null;
   awaySpreadPrice: number | null;

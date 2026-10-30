@@ -1,0 +1,6 @@
+[
+  {"id":401,"season":2025,"week":1,"seasonType":"regular","startDate":"2025-08-30T23:30:00.000Z","startTimeTBD":false,"completed":true,"neutralSite":true,"venue":"Mercedes-Benz Stadium","homeTeam":"Georgia","homeClassification":"fbs","homePoints":34,"awayTeam":"Miami","awayClassification":"fbs","awayPoints":3},
+  {"id":402,"season":2025,"week":2,"seasonType":"regular","startDate":"2025-09-06T16:00:00.000Z","startTimeTBD":false,"completed":true,"neutralSite":false,"venue":"Bryant-Denny Stadium","homeTeam":"Alabama","homeClassification":"fbs","homePoints":42,"awayTeam":"Mercer","awayClassification":"fcs","awayPoints":0},
+  {"id":403,"season":2025,"week":9,"seasonType":"regular","startDate":"2025-10-25T19:30:00.000Z","startTimeTBD":true,"completed":false,"neutralSite":false,"venue":null,"homeTeam":"Alabama","homeClassification":"fbs","homePoints":null,"awayTeam":"Georgia","awayClassification":"fbs","awayPoints":null},
+  {"id":404,"season":2025,"week":3,"seasonType":"regular","startDate":"2025-09-13T16:00:00.000Z","completed":true,"homeTeam":"Mercer","homeClassification":"fcs","homePoints":10,"awayTeam":"Samford","awayClassification":"fcs","awayPoints":7}
+]

@@ -1,0 +1,64 @@
+name: Ingest data
+# Server-side only. Provider keys and the Supabase service role key come from repository secrets and never
+# reach the browser build. Each step is idempotent and safe to re-run; a failed step leaves earlier data intact.
+on:
+  schedule:
+    - cron: "0 10 * * *"   # results + schedules, 6am ET
+    - cron: "0 14 * * *"   # odds, 10am ET
+    - cron: "0 22 * * *"   # odds, 6pm ET
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Job (sync-nfl, sync-ncaaf, sync-nba, sync-odds)"
+        required: true
+        default: sync-nfl
+      args:
+        description: "Extra args, e.g. --seasons 2015-2025 or --sport nba"
+        required: false
+        default: ""
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+  CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+  BALLDONTLIE_API_KEY: ${{ secrets.BALLDONTLIE_API_KEY }}
+  ODDS_API_RESERVE: ${{ vars.ODDS_API_RESERVE || '60' }}
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check configuration
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets are not set; nothing to ingest into. See docs/SETUP.md."
+            echo "SKIP_ALL=1" >> "$GITHUB_ENV"
+          fi
+
+      # Manual run
+      - if: github.event_name == 'workflow_dispatch' && env.SKIP_ALL != '1'
+        run: npm run pipeline -- ${{ inputs.job }} ${{ inputs.args }}
+
+      # Nightly results (each sport runs only if its key is configured)
+      - if: github.event.schedule == '0 10 * * *' && env.SKIP_ALL != '1'
+        run: npm run pipeline -- sync-nfl --current
+      - if: github.event.schedule == '0 10 * * *' && env.SKIP_ALL != '1' && env.CFBD_API_KEY != ''
+        run: npm run pipeline -- sync-ncaaf --current
+      - if: github.event.schedule == '0 10 * * *' && env.SKIP_ALL != '1' && env.BALLDONTLIE_API_KEY != ''
+        run: npm run pipeline -- sync-nba --current
+
+      # Odds twice a day, within the quota plan
+      - if: (github.event.schedule == '0 14 * * *' || github.event.schedule == '0 22 * * *') && env.SKIP_ALL != '1' && env.ODDS_API_KEY != ''
+        run: npm run pipeline -- sync-odds

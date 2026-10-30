@@ -1,0 +1,11 @@
+[
+  {"id":401,"homeTeam":"Georgia","awayTeam":"Miami","lines":[
+    {"provider":"consensus","spread":-10.5,"formattedSpread":"Georgia -10.5","spreadOpen":-9.5,"overUnder":51.5,"overUnderOpen":52,"homeMoneyline":-400,"awayMoneyline":310},
+    {"provider":"Bovada","spread":10.5,"formattedSpread":"Georgia -10.5","spreadOpen":null,"overUnder":51,"overUnderOpen":null,"homeMoneyline":null,"awayMoneyline":null},
+    {"provider":"Broken","spread":-3,"formattedSpread":"Georgia -10.5","spreadOpen":null,"overUnder":null,"overUnderOpen":null,"homeMoneyline":null,"awayMoneyline":null}
+  ]},
+  {"id":403,"homeTeam":"Alabama","awayTeam":"Georgia","lines":[
+    {"provider":"consensus","spread":2.5,"formattedSpread":"Georgia -2.5","spreadOpen":1.5,"overUnder":null,"overUnderOpen":null,"homeMoneyline":null,"awayMoneyline":null},
+    {"provider":"PickBook","spread":0,"formattedSpread":"PK","spreadOpen":null,"overUnder":48.5,"overUnderOpen":null,"homeMoneyline":null,"awayMoneyline":null}
+  ]}
+]

@@ -9,7 +9,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { SignIn } from "./pages/SignIn";
 import { Settings } from "./pages/Settings";
 import { NotFound } from "./pages/NotFound";
-import { Backtests, ModelLab, Ratings, SportSlate } from "./pages/Placeholders";
+import { Backtests, GamePage, ModelLab, Ratings } from "./pages/Placeholders";
+import { SportSlate } from "./pages/SportSlate";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: 1, refetchOnWindowFocus: false } },
@@ -34,6 +35,7 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<Protected />}>
               <Route index element={<Dashboard />} />
               <Route path="/:sport" element={<SportSlate />} />
+              <Route path="/game/:id" element={<GamePage />} />
               <Route path="/ratings" element={<Ratings />} />
               <Route path="/lab" element={<ModelLab />} />
               <Route path="/backtests" element={<Backtests />} />

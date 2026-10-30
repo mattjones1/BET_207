@@ -33,3 +33,10 @@ export function isSportKey(s: string): s is SportKey {
 export function inSeason(sport: SportKey, date: Date): boolean {
   return SPORTS[sport].seasonMonths.includes(date.getUTCMonth() + 1);
 }
+
+/** Football seasons are named by their starting year; a January playoff game belongs to the previous season. */
+export function currentSeason(sport: SportKey, now: Date): number {
+  const m = now.getUTCMonth() + 1, y = now.getUTCFullYear();
+  if (sport === "nba") return m >= 8 ? y : y - 1;   // 2025 = the 2025–26 season
+  return m >= 3 ? y : y - 1;
+}

@@ -1,17 +1,12 @@
-import { useParams } from "react-router-dom";
-import { SPORTS, isSportKey } from "@bet207/core";
 import { Empty, PageHeader } from "../components/ui";
-import { NotFound } from "./NotFound";
 
 /* Sections that later phases fill. Each says plainly what's missing, so nothing looks like real output. */
 
-export function SportSlate() {
-  const { sport = "" } = useParams();
-  if (!isSportKey(sport)) return <NotFound />;
+export function GamePage() {
   return (
     <>
-      <PageHeader title={SPORTS[sport].name} subtitle="Upcoming slate: market lines, model projections, and disagreements." />
-      <Empty title="No games yet">Schedules, results, and lines arrive with Phase 2 (data integration).</Empty>
+      <PageHeader title="Game research" subtitle="Matchup, team comparison, situational, market, model explanation, and your notes." />
+      <Empty title="The research page arrives with Phase 5"><a className="text-accent" href="#/">Back to the dashboard</a></Empty>
     </>
   );
 }

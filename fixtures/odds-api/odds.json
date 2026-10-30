@@ -1,0 +1,11 @@
+[
+  {"id":"bda33adca828c09dc3cac3a856aef176","sport_key":"americanfootball_nfl","sport_title":"NFL","commence_time":"2021-09-10T00:20:00Z","home_team":"Tampa Bay Buccaneers","away_team":"Dallas Cowboys",
+   "bookmakers":[
+     {"key":"draftkings","title":"DraftKings","last_update":"2021-06-10T13:33:18Z","markets":[
+       {"key":"h2h","last_update":"2021-06-10T13:33:18Z","outcomes":[{"name":"Dallas Cowboys","price":240},{"name":"Tampa Bay Buccaneers","price":-303}]},
+       {"key":"spreads","last_update":"2021-06-10T13:33:18Z","outcomes":[{"name":"Dallas Cowboys","price":-109,"point":6.5},{"name":"Tampa Bay Buccaneers","price":-111,"point":-6.5}]},
+       {"key":"totals","last_update":"2021-06-10T13:35:00Z","outcomes":[{"name":"Over","price":-110,"point":52.5},{"name":"Under","price":-110,"point":52.5}]}]},
+     {"key":"lopsided","title":"Lopsided Book","last_update":"2021-06-10T13:00:00Z","markets":[
+       {"key":"spreads","last_update":"2021-06-10T13:00:00Z","outcomes":[{"name":"Dallas Cowboys","price":-110,"point":7},{"name":"Tampa Bay Buccaneers","price":-110,"point":-6.5}]}]}
+   ]}
+]
