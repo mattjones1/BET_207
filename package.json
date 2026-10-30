@@ -1,0 +1,26 @@
+{
+  "name": "bet-207",
+  "private": true,
+  "description": "EdgeBoard: a personal sports handicapping research platform (NFL, college football, NBA).",
+  "workspaces": [
+    "packages/core",
+    "packages/pipeline",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "test": "vitest run",
+    "typecheck": "npm run typecheck --workspaces",
+    "pipeline": "npm run cli -w packages/pipeline --"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "type": "module"
+}

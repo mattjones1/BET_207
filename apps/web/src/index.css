@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/* EdgeBoard design tokens. Dark, dense, analytic. Green/red only for analytic direction, always with a sign or label. */
+@theme {
+  --color-bg: #0a0e15;
+  --color-panel: #111723;
+  --color-panel-2: #161e2c;
+  --color-line: #232d3f;
+  --color-ink: #e6ebf2;
+  --color-mute: #93a1b5;
+  --color-faint: #64738a;
+  --color-accent: #38bdf8;
+  --color-pos: #34d399;
+  --color-neg: #f87171;
+  --color-warn: #fbbf24;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+@layer base {
+  html { color-scheme: dark; }
+  body { @apply bg-bg text-ink font-sans antialiased; font-size: 14px; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  table { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .panel { @apply bg-panel border border-line rounded-lg; }
+  .panel-h { @apply text-xs font-semibold uppercase tracking-wider text-mute; }
+  .num { font-variant-numeric: tabular-nums; @apply font-mono; }
+  .chip { @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium border; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium border border-line bg-panel-2 hover:border-accent/60 disabled:opacity-50; }
+  .btn-primary { @apply bg-accent text-bg border-accent hover:bg-accent/90; }
+  .input { @apply w-full rounded-md border border-line bg-bg px-3 py-2 text-sm placeholder:text-faint focus:border-accent focus:outline-none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

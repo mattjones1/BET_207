@@ -1,0 +1,13 @@
+{
+  "name": "@bet207/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared types, conventions, odds math, models, and backtesting for EdgeBoard. Runs in Node and the browser.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

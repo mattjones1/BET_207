@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+coverage/
+.vite/
+packages/pipeline/.cache/
+research/.ipynb_checkpoints/
+.DS_Store
