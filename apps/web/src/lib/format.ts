@@ -20,7 +20,8 @@ export const price = formatAmerican;
 export function signed(n: number | null | undefined, digits = 1): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return "—";
   const s = Math.abs(n).toFixed(digits);
-  return n > 0 ? `+${s}` : n < 0 ? `−${s}` : s;
+  if (Number(s) === 0) return (0).toFixed(digits);   // never "−0.0"
+  return n > 0 ? `+${s}` : `−${s}`;
 }
 
 export function pct(p: number | null | undefined, digits = 1): string {

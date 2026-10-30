@@ -42,6 +42,7 @@ function normZero(n: number): number {
 
 /** Format one spread number the way sportsbooks do: −6.5, +3, PK. */
 export function formatSpreadNumber(spread: number): string {
+  spread = round(spread, 1);
   if (spread === 0) return "PK";
   const s = Math.abs(spread).toFixed(1).replace(/\.0$/, "");
   return spread < 0 ? `−${s}` : `+${s}`;
@@ -60,6 +61,7 @@ export function formatHomeSpread(homeMargin: number | null, homeLabel = "HOME"):
 /** Show a margin as the favorite's spread: +6.5 with home BUF, away MIA → "BUF −6.5". */
 export function formatFavorite(homeMargin: number | null, homeLabel: string, awayLabel: string): string {
   if (homeMargin === null || !Number.isFinite(homeMargin)) return "—";
+  homeMargin = round(homeMargin, 1);
   if (homeMargin === 0) return "PK";
   return homeMargin > 0 ? `${homeLabel} ${formatSpreadNumber(-homeMargin)}` : `${awayLabel} ${formatSpreadNumber(homeMargin)}`;
 }

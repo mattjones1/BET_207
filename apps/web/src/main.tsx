@@ -9,7 +9,10 @@ import { Dashboard } from "./pages/Dashboard";
 import { SignIn } from "./pages/SignIn";
 import { Settings } from "./pages/Settings";
 import { NotFound } from "./pages/NotFound";
-import { Backtests, GamePage, ModelLab, Ratings } from "./pages/Placeholders";
+import { GamePage } from "./pages/Placeholders";
+import { ModelLab } from "./pages/ModelLab";
+import { Backtests } from "./pages/Backtests";
+import { Ratings } from "./pages/Ratings";
 import { SportSlate } from "./pages/SportSlate";
 
 const queryClient = new QueryClient({

@@ -2,9 +2,11 @@
  * Builds slate rows (one per game) from season data and markets. Pure: easy to test, same in live and demo.
  */
 import {
-  bestMarket, formatRecord, freshness, records, type MarketView, type SportKey, type Team,
+  bestMarket, breakEven, coverProbability, formatRecord, freshness, records, spreadEdge, totalEdge,
+  type Edge, type MarketView, type SportKey, type Team,
 } from "@bet207/core";
 import type { GameRow, Markets, SeasonData } from "./source";
+import type { GameProjection, ModelData } from "./model";
 
 export interface QualityFlag { key: string; label: string; tone: "warn" | "neutral" | "neg" }
 export interface SlateRow {
@@ -14,6 +16,12 @@ export interface SlateRow {
   homeRecord: string;
   awayRecord: string;
   market: MarketView | null;
+  model: GameProjection | null;
+  /** model − market on the home-margin axis; null when either is missing. */
+  edge: Edge | null;
+  totalEdge: { points: number; lean: "over" | "under" | null } | null;
+  /** Probability that the side the model prefers covers the selected line (needs a calibrated sigma). */
+  cover: { side: "home" | "away"; p: number; pPush: number; breakEven: number | null } | null;
   flags: QualityFlag[];
 }
 
@@ -45,7 +53,7 @@ export function defaultGroup(groups: SlateGroup[], now: Date): SlateGroup | unde
   return groups.find((g) => g.games.some((x) => x.status !== "final" && x.startTime >= cutoff)) ?? groups.at(-1);
 }
 
-export function buildSlate(season: SeasonData, games: GameRow[], markets: Markets, book: string, now: Date): SlateRow[] {
+export function buildSlate(season: SeasonData, games: GameRow[], markets: Markets, book: string, now: Date, model: ModelData | null = null): SlateRow[] {
   const sched = season.games.map((g) => ({ ...g }));
   return games.map((g) => {
     const rec = records(sched, g.startTime);   // records entering this game only
@@ -58,13 +66,29 @@ export function buildSlate(season: SeasonData, games: GameRow[], markets: Market
     else if (market.source === "provider") flags.push({ key: "provider", label: "Provider line (timing unknown)", tone: "neutral" });
     else if (freshness(market.updatedAt, now) === "stale") flags.push({ key: "stale", label: "Stale odds", tone: "warn" });
     if (g.completeness !== "complete") flags.push({ key: "partial", label: "Partial schedule data", tone: "warn" });
+    const proj = model?.projections.get(g.id) ?? null;
+    if (proj?.status === "insufficient") flags.push({ key: "insufficient", label: "Insufficient data for a projection", tone: "neg" });
+    else if (proj?.status === "experimental") flags.push({ key: "experimental", label: "Early-season projection", tone: "warn" });
+    const usable = proj && proj.status !== "insufficient" ? proj : null;
+    const edge = spreadEdge(usable?.homeMargin ?? null, market?.homeMargin ?? null);
+    let cover: SlateRow["cover"] = null;
+    if (usable && edge?.favors && market?.homeMargin != null) {
+      const cal = model?.calibration ?? null;
+      const p = coverProbability(cal, usable.homeMargin, market.homeMargin);
+      if (p) {
+        const price = p.side === "home" ? market.homeSpreadPrice : market.awaySpreadPrice;
+        cover = { side: p.side, p: p.p, pPush: p.pPush, breakEven: breakEven(price) };
+      } else flags.push(cal
+        ? { key: "uncalibrated", label: "No reliable P(cover): calibration didn't beat a coin flip", tone: "neutral" }
+        : { key: "uncalibrated", label: "Uncalibrated (no backtest yet)", tone: "neutral" });
+    }
     return {
       game: g,
       home: season.teams.get(g.homeTeamId) ?? unknownTeam(g.homeTeamId, season.sport),
       away: season.teams.get(g.awayTeamId) ?? unknownTeam(g.awayTeamId, season.sport),
       homeRecord: formatRecord(rec.get(g.homeTeamId)),
       awayRecord: formatRecord(rec.get(g.awayTeamId)),
-      market, flags,
+      market, model: usable, edge, totalEdge: totalEdge(usable?.total ?? null, market?.total ?? null), cover, flags,
     };
   });
 }

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "Job (sync-nfl, sync-ncaaf, sync-nba, sync-odds)"
+        description: "Job (sync-nfl, sync-ncaaf, sync-nba, sync-odds, rebuild-ratings, backtest)"
         required: true
         default: sync-nfl
       args:
@@ -58,6 +58,10 @@ jobs:
         run: npm run pipeline -- sync-ncaaf --current
       - if: github.event.schedule == '0 10 * * *' && env.SKIP_ALL != '1' && env.BALLDONTLIE_API_KEY != ''
         run: npm run pipeline -- sync-nba --current
+
+      # Ratings and projections after results (a new immutable model run per sport)
+      - if: github.event.schedule == '0 10 * * *' && env.SKIP_ALL != '1'
+        run: npm run pipeline -- rebuild-ratings
 
       # Odds twice a day, within the quota plan
       - if: (github.event.schedule == '0 14 * * *' || github.event.schedule == '0 22 * * *') && env.SKIP_ALL != '1' && env.ODDS_API_KEY != ''

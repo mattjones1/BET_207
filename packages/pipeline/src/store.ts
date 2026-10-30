@@ -5,7 +5,7 @@
  * Every write is an upsert or insert-if-absent. Nothing ever deletes, so a failed job can't erase good data.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { SportKey } from "@bet207/core";
+import type { BacktestResult, Calibration, FitGame, ModelParams, Observation, Projection, SportKey } from "@bet207/core";
 import type { NormalizedGame, NormalizedLine, NormalizedTeam } from "./adapters/types";
 import { requireEnv } from "./lib/env";
 
@@ -20,7 +20,24 @@ export interface OddsRow {
 }
 export interface RunOutcome { status: "success" | "failed" | "skipped"; rows: number; error?: string; details?: Record<string, unknown> }
 
+export interface RatingRow { teamId: string; asOf: string; mov: number; off: number; def: number; elo: number | null; gamesUsed: number; uncertainty: number }
+export interface ProjectionRow extends Projection { sigma: number | null }
+
 export interface Store {
+  /** Every game of a sport as model input (finalAt from results). */
+  fitGames(sport: SportKey): Promise<FitGame[]>;
+  /** Find or create an immutable config by content hash; returns its id. */
+  ensureConfig(sport: SportKey, name: string, params: ModelParams, hash: string, owner: string | null): Promise<string>;
+  /** The config the user promoted for production, if any (user_settings.prefs.activeConfig[sport]). */
+  activeConfig(sport: SportKey): Promise<{ id: string; params: ModelParams } | null>;
+  startModelRun(configId: string, codeVersion: string, dataCutoff: string): Promise<string>;
+  writeRatings(runId: string, rows: RatingRow[]): Promise<void>;
+  writeProjections(runId: string, rows: ProjectionRow[]): Promise<void>;
+  finishModelRun(runId: string, status: "success" | "failed", summary: Record<string, unknown>): Promise<void>;
+  /** The calibration chosen by the newest backtest of this config, if one exists. */
+  calibration(configId: string): Promise<Calibration | null>;
+  /** Store a backtest summary and its per-game observations; returns the run id. */
+  writeBacktest(configId: string, sport: SportKey, codeVersion: string, result: Omit<BacktestResult, "observations">, observations: Observation[]): Promise<string>;
   upsertTeams(sport: SportKey, teams: NormalizedTeam[]): Promise<Map<string, string>>;
   aliasMap(sport: SportKey): Promise<Map<string, string>>;
   upsertGames(games: NormalizedGame[], teamIds: Map<string, string>, retrievedAt: string): Promise<Map<string, string>>;
@@ -172,6 +189,70 @@ export class SupabaseStore implements Store {
     const then = new Date(row.checked_at), now = new Date();
     return then.getUTCMonth() === now.getUTCMonth() && then.getUTCFullYear() === now.getUTCFullYear() ? row.remaining : null;
   }
+  async fitGames(sport: SportKey) {
+    const rows = await this.all<Record<string, unknown>>((a, b) => this.db.from("games")
+      .select("id,season,start_time,home_team_id,away_team_id,neutral_site,home_rest,away_rest,game_results(home_score,away_score,final_at)")
+      .eq("sport_id", SPORT_ID[sport]).neq("status", "canceled").order("start_time").order("id").range(a, b), "fit games");
+    return rows.map((g) => {
+      const r = (Array.isArray(g.game_results) ? g.game_results[0] : g.game_results) as { home_score: number; away_score: number; final_at: string } | null;
+      return {
+        id: g.id as string, season: g.season as number, startTime: g.start_time as string, finalAt: r?.final_at ?? null,
+        homeTeamId: g.home_team_id as string, awayTeamId: g.away_team_id as string, neutralSite: g.neutral_site as boolean | null,
+        homeRest: g.home_rest as number | null, awayRest: g.away_rest as number | null, homeScore: r?.home_score ?? null, awayScore: r?.away_score ?? null,
+      };
+    });
+  }
+  async ensureConfig(sport: SportKey, name: string, params: ModelParams, hash: string, owner: string | null) {
+    const q = this.db.from("model_configs").select("id").eq("sport_id", SPORT_ID[sport]).eq("params_hash", hash);
+    const found = this.check(await (owner ? q.eq("owner", owner) : q.is("owner", null)).limit(1), "find config") as { id: string }[];
+    if (found[0]) return found[0].id;
+    const vq = this.db.from("model_configs").select("version").eq("sport_id", SPORT_ID[sport]).eq("name", name);
+    const prev = this.check(await (owner ? vq.eq("owner", owner) : vq.is("owner", null)).order("version", { ascending: false }).limit(1), "versions") as { version: number }[];
+    const row = this.check(await this.db.from("model_configs").insert({ sport_id: SPORT_ID[sport], owner, name, version: (prev[0]?.version ?? 0) + 1, params, params_hash: hash })
+      .select("id").single(), "insert config") as { id: string };
+    return row.id;
+  }
+  async activeConfig(sport: SportKey) {
+    const s = this.check(await this.db.from("user_settings").select("prefs").limit(1), "settings") as { prefs: { activeConfig?: Record<string, string> } }[];
+    const id = s[0]?.prefs?.activeConfig?.[sport];
+    if (!id) return null;
+    const c = this.check(await this.db.from("model_configs").select("id,params").eq("id", id).eq("sport_id", SPORT_ID[sport]).limit(1), "active config") as { id: string; params: ModelParams }[];
+    return c[0] ?? null;
+  }
+  async startModelRun(configId: string, codeVersion: string, dataCutoff: string) {
+    const r = this.check(await this.db.from("model_runs").insert({ config_id: configId, kind: "production", code_version: codeVersion, data_cutoff: dataCutoff, status: "running" }).select("id").single(), "start model run") as { id: string };
+    return r.id;
+  }
+  async writeRatings(runId: string, rows: RatingRow[]) {
+    for (const c of chunks(rows)) this.check(await this.db.from("team_ratings").insert(c.map((r) => ({
+      run_id: runId, team_id: r.teamId, as_of: r.asOf, mov_rating: r.mov, off_rating: r.off, def_rating: r.def, elo: r.elo, games_used: r.gamesUsed, uncertainty: r.uncertainty,
+    }))), "ratings");
+  }
+  async writeProjections(runId: string, rows: ProjectionRow[]) {
+    for (const c of chunks(rows)) this.check(await this.db.from("game_projections").insert(c.map((p) => ({
+      run_id: runId, game_id: p.gameId, proj_home_margin: p.homeMargin, proj_total: p.total, elo_home_margin: p.eloMargin, sigma: p.sigma,
+      status: p.status, explanation: { ...p.explanation, statusReason: p.statusReason, homeUncertainty: p.homeUncertainty, awayUncertainty: p.awayUncertainty },
+    }))), "projections");
+  }
+  async finishModelRun(runId: string, status: "success" | "failed", summary: Record<string, unknown>) {
+    this.check(await this.db.from("model_runs").update({ status, finished_at: new Date().toISOString(), summary }).eq("id", runId), "finish model run");
+  }
+  async calibration(configId: string) {
+    const r = this.check(await this.db.from("backtest_runs").select("summary").eq("config_id", configId).is("owner", null).order("created_at", { ascending: false }).limit(1), "calibration") as { summary: { calibration?: { chosen?: Calibration } } }[];
+    return r[0]?.summary?.calibration?.chosen ?? null;
+  }
+  async writeBacktest(configId: string, sport: SportKey, codeVersion: string, result: Omit<BacktestResult, "observations">, observations: Observation[]) {
+    const run = this.check(await this.db.from("backtest_runs").insert({
+      config_id: configId, owner: null, sport_id: SPORT_ID[sport], seasons: result.seasons, method: "walk_forward",
+      line_source: result.lineSources.join(", ") || "none", code_version: codeVersion, summary: result,
+    }).select("id").single(), "backtest run") as { id: string };
+    for (const c of chunks(observations)) this.check(await this.db.from("backtest_observations").insert(c.map((o) => ({
+      run_id: run.id, game_id: o.gameId, proj_home_margin: o.projHomeMargin, market_home_margin: o.marketHomeMargin, actual_margin: o.actualMargin,
+      edge: o.edge, bucket: o.bucket, ats_result: o.ats, proj_total: o.projTotal, market_total: o.marketTotal, actual_total: o.actualTotal,
+      ou_result: o.ou, p_cover: o.pCover, price: o.price, units: o.units,
+    }))), "backtest observations");
+    return run.id;
+  }
 }
 
 // ───────────────────────── Memory ─────────────────────────
@@ -189,6 +270,30 @@ export class MemoryStore implements Store {
   private seq = 0;
   private id = (p: string) => `${p}-${++this.seq}`;
 
+  async fitGames(sport: SportKey) {
+    return [...this.games.values()].filter((g) => g.sport_id === SPORT_ID[sport]).sort((a, b) => a.start_time.localeCompare(b.start_time)).map((g) => {
+      const r = this.results.get(g.id);
+      return { id: g.id, season: g.season, startTime: g.start_time, finalAt: r?.finalAt ?? null, homeTeamId: g.home_team_id, awayTeamId: g.away_team_id,
+        neutralSite: g.neutral_site, homeRest: g.home_rest, awayRest: g.away_rest, homeScore: r?.homeScore ?? null, awayScore: r?.awayScore ?? null };
+    });
+  }
+  configs = new Map<string, { id: string; sport: SportKey; params: ModelParams }>();
+  modelRuns = new Map<string, { configId: string; status: string; ratings: RatingRow[]; projections: ProjectionRow[]; summary?: Record<string, unknown> }>();
+  async ensureConfig(sport: SportKey, _name: string, params: ModelParams, hash: string) {
+    const k = sport + "|" + hash;
+    if (!this.configs.has(k)) this.configs.set(k, { id: this.id("config"), sport, params });
+    return this.configs.get(k)!.id;
+  }
+  async activeConfig(_sport: SportKey) { return null; }
+  async startModelRun(configId: string) { const id = this.id("run"); this.modelRuns.set(id, { configId, status: "running", ratings: [], projections: [] }); return id; }
+  async writeRatings(runId: string, rows: RatingRow[]) { this.modelRuns.get(runId)!.ratings.push(...rows); }
+  async writeProjections(runId: string, rows: ProjectionRow[]) { this.modelRuns.get(runId)!.projections.push(...rows); }
+  async finishModelRun(runId: string, status: "success" | "failed", summary: Record<string, unknown>) { Object.assign(this.modelRuns.get(runId)!, { status, summary }); }
+  backtests: { configId: string; result: Omit<BacktestResult, "observations">; observations: Observation[] }[] = [];
+  async calibration(configId: string) { return this.backtests.filter((b) => b.configId === configId).at(-1)?.result.calibration.chosen ?? null; }
+  async writeBacktest(configId: string, _sport: SportKey, _code: string, result: Omit<BacktestResult, "observations">, observations: Observation[]) {
+    this.backtests.push({ configId, result, observations }); return this.id("backtest");
+  }
   async upsertTeams(sport: SportKey, teams: NormalizedTeam[]) {
     const ids = new Map<string, string>();
     for (const t of teams) {

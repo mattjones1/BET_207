@@ -37,6 +37,8 @@ describe("display", () => {
     expect(formatFavorite(6.5, "BUF", "MIA")).toBe("BUF −6.5");
     expect(formatFavorite(-3, "BUF", "MIA")).toBe("MIA −3");
     expect(formatFavorite(0, "BUF", "MIA")).toBe("PK");
+    expect(formatFavorite(-0.04, "BUF", "MIA")).toBe("PK");   // rounds to zero: never "−0"
+    expect(formatFavorite(6.46, "BUF", "MIA")).toBe("BUF −6.5");
   });
 });
 

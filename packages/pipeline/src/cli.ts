@@ -11,12 +11,16 @@ import { currentFootballSeason, currentNbaSeason, parseSeasons, type Job, type J
 import { syncNcaaf, syncNba, syncNfl } from "./jobs/results";
 import { syncOdds } from "./jobs/odds";
 import { exportDemo } from "./jobs/demo";
+import { rebuildRatings } from "./jobs/model";
+import { backtest } from "./jobs/backtest";
 
 const JOBS: Record<string, { run: Job; sport?: JobContext["sport"] }> = {
   "sync-nfl": { run: syncNfl, sport: "nfl" },
   "sync-ncaaf": { run: syncNcaaf, sport: "ncaaf" },
   "sync-nba": { run: syncNba, sport: "nba" },
   "sync-odds": { run: syncOdds },
+  "rebuild-ratings": { run: rebuildRatings },
+  "backtest": { run: backtest },
   "export-demo": { run: exportDemo, sport: "nfl" },
 };
 

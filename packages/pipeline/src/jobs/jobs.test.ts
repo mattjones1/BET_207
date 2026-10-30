@@ -84,3 +84,21 @@ describe("helpers", () => {
     expect([games[0]!.homeRest, games[1]!.homeRest]).toEqual([null, 9]);
   });
 });
+
+describe("rebuild-ratings", () => {
+  it("writes an immutable run with ratings and projections; no sigma until a backtest exists", async () => {
+    const { rebuildSport } = await import("./model");
+    const store = new MemoryStore();
+    await loadNfl(store);
+    const r = await rebuildSport(store, "nfl", new Date("2026-12-01T00:00:00Z"), () => {});
+    const runs = [...store.modelRuns.values()];
+    expect(runs).toHaveLength(1);
+    expect(runs[0]!.status).toBe("success");
+    expect(runs[0]!.projections.every((p) => p.sigma === null)).toBe(true);
+    expect(r.rows).toBeGreaterThan(0);
+    // A second run is a new run, not an overwrite; the same params reuse one config.
+    await rebuildSport(store, "nfl", new Date("2026-12-02T00:00:00Z"), () => {});
+    expect(store.modelRuns.size).toBe(2);
+    expect(store.configs.size).toBe(1);
+  });
+});
