@@ -17,8 +17,13 @@ Personal sports handicapping research platform for the NFL, FBS college football
 - `packages/pipeline`: provider adapters and jobs. Run with `npm run pipeline -- <job> [--sport nfl] [--dry-run]`.
 - `apps/web`: React, TypeScript, Vite, Tailwind v4, TanStack Query, and the HashRouter. All data access goes through `src/data/`.
 - `supabase/migrations`: the schema and RLS. `supabase/tests/migrations.test.ts` runs them on PGlite with an auth stub.
-- `docs/`: architecture, data sources, models, backtesting, and setup. `docs/decisions/` holds one file per architecture decision.
+- `docs/`: SETUP, ARCHITECTURE, DATA_SOURCES, PIPELINE, MODELS, BACKTESTING. `docs/decisions/` holds one file per architecture decision. Read the matching doc before changing that area, and update it in the same commit.
+
+## Honest-output rules (the product depends on them)
+- P(cover) and EV appear only when the newest backtest chose a calibration that beat a coin flip out of sample (`coverProbability`). Otherwise the UI says why they are hidden.
+- Any group with fewer than 100 decided games is flagged "insufficient sample". The UI never says "profitable".
+- Projections exist only for unplayed games. Past games are judged in Backtesting.
 
 ## Commands
-- `npm test`: every unit and migration test. `npm run typecheck`, `npm run build`, `npm run dev` (port 5207, demo mode without env).
+- `npm test`: every unit and migration test. `python tests/e2e/smoke.py`: browser smoke test against `vite preview` (demo mode). `npm run typecheck`, `npm run build`, `npm run dev` (port 5207, demo mode without env).
 - Deploy: pushing `main` runs `.github/workflows/deploy.yml` to Pages at https://mattjones1.github.io/BET_207/.
